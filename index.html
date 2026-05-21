@@ -189,23 +189,10 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);font-s
   <div class="ph-stats">
     <span>🟢 <strong>413</strong> câu ôn tập</span>
     <span>·</span>
-    <span>🔥 <strong>78</strong> câu nâng cao</span>
-    <span>·</span>
     <span>🗂️ <strong>12</strong> chủ đề</span>
   </div>
 </div>
 
-<!-- TABS -->
-<div class="mode-tabs">
-  <button class="tab on" id="tab-normal" onclick="switchTab('normal')">
-    📝 Ôn tập thường
-    <span class="tab-badge tab-badge-normal">413 câu</span>
-  </button>
-  <button class="tab hard-tab" id="tab-hard" onclick="switchTab('hard')">
-    🔥 Câu nâng cao
-    <span class="tab-badge tab-badge-hard">78 câu</span>
-  </button>
-</div>
 
 <!-- ═══════ PANEL: NORMAL ═══════ -->
 <div class="panel on" id="panel-normal">
@@ -238,39 +225,6 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);font-s
   <div id="normalArea"></div>
 </div>
 
-<!-- ═══════ PANEL: HARD ═══════ -->
-<div class="panel" id="panel-hard">
-
-  <div class="hard-notice">
-    <span class="hn-ico">🔥</span>
-    <div>
-      <strong>Câu hỏi nâng cao — dành cho mục tiêu 10 điểm</strong><br>
-      78 câu này <strong>KHÔNG trộn</strong> vào bài ôn tập thông thường. Chỉ làm khi đã nắm chắc 413 câu cơ bản. Câu nâng cao thường là dạng vận dụng, tính toán, hoặc kiến thức chi tiết.
-    </div>
-  </div>
-
-  <div class="hcb">
-    <div class="cb-row">
-      <span class="cb-lbl">Số câu</span>
-      <div class="cnt-row" id="hCntRow">
-        <button class="cnt on" data-n="0">Tất cả (78)</button>
-        <button class="cnt" data-n="25">25</button>
-        <button class="cnt" data-n="15">15</button>
-      </div>
-      <div style="flex:1"></div>
-      <button class="mix on" id="mxH" onclick="toggleMix('mxH','mixH')"><span class="mix-dot" id="mxHd"></span>Trộn câu</button>
-      <button class="mix on" id="mxHA" onclick="toggleMix('mxHA','mixHA')"><span class="mix-dot" id="mxHAd"></span>Trộn đáp án</button>
-    </div>
-  </div>
-
-  <div class="sr">
-    <button class="sbtn sbtn-hard" id="hStartBtn" onclick="buildHard()">🔥 Bắt đầu câu nâng cao</button>
-    <div class="av" id="hAvail"></div>
-  </div>
-
-  <div id="hardResult"></div>
-  <div id="hardArea"></div>
-</div>
 
 </div><!-- .wrap -->
 
