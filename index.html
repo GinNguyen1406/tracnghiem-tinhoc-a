@@ -112,6 +112,12 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);font-s
 .rb-retry{background:var(--ac);color:#fff;box-shadow:0 2px 8px rgba(59,111,245,.25)}.rb-retry:hover{transform:translateY(-1px)}
 .rb-retry-hard{background:linear-gradient(135deg,#7c3aed,#9d4edd);color:#fff;box-shadow:0 2px 8px rgba(124,58,237,.25)}.rb-retry-hard:hover{transform:translateY(-1px)}
 .rb-clear{background:var(--s2);border:1.5px solid var(--bd2);color:var(--tx2)}.rb-clear:hover{border-color:var(--ac);color:var(--ac)}
+.rb-retry-wrong{background:var(--re);color:#fff;box-shadow:0 2px 8px rgba(220,38,38,.22)}.rb-retry-wrong:hover{transform:translateY(-1px)}
+.badge-red{background:var(--re-bg);color:var(--re);border:1px solid var(--re-bd)}
+.chip.haysai{border-color:var(--or-bd);color:var(--or);background:var(--or-bg)}
+.chip.haysai.on{background:var(--or);border-color:var(--or);color:#fff}
+.chip.haysai.on .hs-dot{background:#fff}.hs-dot{width:6px;height:6px;border-radius:50%;background:var(--or);display:inline-block;margin-right:3px}
+.wc-badge{font-size:9px;font-weight:700;color:var(--re);background:var(--re-bg);border:1px solid var(--re-bd);padding:2px 6px;border-radius:4px;margin-left:2px}
 
 /* ── SECTION HEADER ── */
 .sec-hd{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px 12px 0 0;border:1px solid var(--bd);border-bottom:none;background:linear-gradient(to right,#f8fafc,#f1f5f9);margin-top:0}
@@ -202,6 +208,12 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);font-s
       <span class="cb-lbl">Chủ đề</span>
       <div class="chips" id="topicChips"></div>
     </div>
+    <div class="cb-row" id="haySaiRow" style="display:none">
+      <span class="cb-lbl">Ôn sai</span>
+      <div class="chips">
+        <button class="chip haysai" id="haySaiChip" onclick="toggleHaySai()"><span class="hs-dot"></span>Hay sai · <span id="haySaiCount">0</span> câu</button>
+      </div>
+    </div>
     <div class="cb-row">
       <span class="cb-lbl">Số câu</span>
       <div class="cnt-row" id="cntRow">
@@ -275,8 +287,16 @@ let ST={
   mode:'normal',
   quiz:[],hquiz:[],
   ans:{},hans:{},
-  qmap:{}
+  qmap:{},
+  lastWrong:[],   // câu sai của lần làm vừa rồi
+  haySai:false    // đang lọc chế độ "hay sai"
 };
+
+/* ── LOCALSTORAGE – theo dõi câu hay sai ── */
+const WC_KEY='tna_wc_v1';
+function loadWC(){try{return JSON.parse(localStorage.getItem(WC_KEY)||'{}')}catch{return {}}}
+function saveWC(w){try{localStorage.setItem(WC_KEY,JSON.stringify(w))}catch{}}
+function qk(q){return(q.q||'').substring(0,80)}
 
 /* ── INIT ── */
 function init(){
@@ -300,7 +320,7 @@ function init(){
   });
   // Init dots green
   ['mxQd','mxAd','mxHd','mxHAd'].forEach(id=>document.getElementById(id).style.background='var(--gr)');
-  upAvail();upHAvail();
+  upAvail();upHAvail();updateHaySaiUI();
 }
 
 function pickT(t){
@@ -309,7 +329,25 @@ function pickT(t){
   document.querySelectorAll('#topicChips .chip').forEach(b=>b.classList.toggle('on',ST.topics.has(b.dataset.t)));
   upAvail();
 }
-function pool(){return ST.topics.has('ALL')?EASY:EASY.filter(q=>ST.topics.has(q.t));}
+function pool(){
+  if(ST.haySai){const wc=loadWC();return EASY.filter(q=>(wc[qk(q)]||0)>=2);}
+  return ST.topics.has('ALL')?EASY:EASY.filter(q=>ST.topics.has(q.t));
+}
+function toggleHaySai(){
+  ST.haySai=!ST.haySai;
+  const chip=document.getElementById('haySaiChip');chip.classList.toggle('on',ST.haySai);
+  document.querySelectorAll('#topicChips .chip').forEach(b=>{b.style.opacity=ST.haySai?'.35':'1';b.style.pointerEvents=ST.haySai?'none':'';});
+  document.querySelectorAll('#cntRow .cnt').forEach(b=>{b.style.opacity=ST.haySai?'.35':'1';b.style.pointerEvents=ST.haySai?'none':'';});
+  upAvail();
+}
+function updateHaySaiUI(){
+  const wc=loadWC();
+  const cnt=EASY.filter(q=>(wc[qk(q)]||0)>=2).length;
+  const el=document.getElementById('haySaiCount');if(el)el.textContent=cnt;
+  const row=document.getElementById('haySaiRow');if(row)row.style.display=cnt>0?'flex':'none';
+  // Reset hay sai mode if no more hay sai questions
+  if(cnt===0&&ST.haySai){ST.haySai=false;const c=document.getElementById('haySaiChip');if(c)c.classList.remove('on');}
+}
 function upAvail(){
   const p=pool(),n=ST.cnt===0?p.length:Math.min(ST.cnt,p.length);
   document.getElementById('avail').innerHTML=`<strong>${n}</strong> câu từ ${p.length} có sẵn`;
@@ -355,7 +393,8 @@ function buildNormal(){
   document.getElementById('normalResult').innerHTML='';
   const area=document.getElementById('normalArea');area.innerHTML='';
   area.appendChild(secHd('📝 Bài ôn tập',`${ST.quiz.length} câu`,'badge-blue',false));
-  const l=mk('div','ql');ST.quiz.forEach((q,i)=>l.appendChild(qItem(q,i+1)));area.appendChild(l);
+  const wcMap=loadWC();
+  const l=mk('div','ql');ST.quiz.forEach((q,i)=>l.appendChild(qItem(q,i+1,false,wcMap)));area.appendChild(l);
   setFloat(ST.quiz.length,'normal');
   document.getElementById('sp').classList.add('show');
   document.getElementById('spT').textContent=ST.quiz.length;
@@ -380,6 +419,24 @@ function buildHard(){
   setTimeout(()=>area.scrollIntoView({behavior:'smooth',block:'start'}),80);
 }
 
+/* ── BUILD RETRY WRONG ── */
+function buildRetryWrong(){
+  let p=[...ST.lastWrong];if(!p.length)return;
+  if(ST.mixQ)p=rnd(p);
+  ST.quiz=p.map((q,i)=>{const e={...q,id:'q'+i,opts:mkOpts(q,ST.mixA)};ST.qmap[e.id]=e;return e;});
+  ST.ans={};
+  document.getElementById('normalResult').innerHTML='';
+  const area=document.getElementById('normalArea');area.innerHTML='';
+  area.appendChild(secHd('🔁 Làm lại câu sai',`${ST.quiz.length} câu`,'badge-red',false));
+  const wcMap=loadWC();
+  const l=mk('div','ql');ST.quiz.forEach((q,i)=>l.appendChild(qItem(q,i+1,false,wcMap)));area.appendChild(l);
+  setFloat(ST.quiz.length,'normal');
+  document.getElementById('sp').classList.add('show');
+  document.getElementById('spT').textContent=ST.quiz.length;
+  upProg('normal');
+  setTimeout(()=>area.scrollIntoView({behavior:'smooth',block:'start'}),80);
+}
+
 function setFloat(total,mode){
   document.getElementById('fs').classList.add('show');
   document.getElementById('fsT').textContent=total;
@@ -395,12 +452,14 @@ function secHd(title,sub,bc,isHard){
   d.innerHTML=`<span class="sec-icon">${ico}</span><span class="sec-title">${txt}</span><span class="sec-badge ${bc}">${sub}</span>`;
   return d;
 }
-function qItem(q,num,isHard=false){
+function qItem(q,num,isHard=false,wcMap=null){
   const ti=TMAP[q.t]||{c:'#64748b',bg:'#f8fafc',ico:'📚'};
   const d=mk('div','qi'+(isHard?' hard-qi':''));d.id='item-'+q.id;
   const fq=q.c>=3?`<span class="freq">×${q.c}</span>`:'';
+  const wc=wcMap||loadWC();const wct=wc[qk(q)]||0;
+  const wcBadge=wct>=1?`<span class="wc-badge">❌ ${wct} lần sai</span>`:'';
   const oh=q.opts.map((o,i)=>`<div class="oi" id="oi-${q.id}-${i}" onclick="pick('${q.id}',${i})"><span class="ol">${LTRS[i]}</span><span>${esc(o)}</span></div>`).join('');
-  d.innerHTML=`<div class="qi-hd"><div class="qn" id="qn-${q.id}">${num}</div><div class="qi-tags"><span class="tt" style="background:${ti.bg};color:${ti.c};border:1px solid ${ti.c}30">${ti.ico} ${q.t}</span><span class="dt ${DC[q.d]||'medium'}">${DM[q.d]||'TB'}</span>${fq}</div></div><div class="qt">${esc(q.q)}</div><div class="og">${oh}</div><div class="qf" id="qf-${q.id}"><span class="fi" id="fi-${q.id}"></span><div id="ft-${q.id}"></div></div>`;
+  d.innerHTML=`<div class="qi-hd"><div class="qn" id="qn-${q.id}">${num}</div><div class="qi-tags"><span class="tt" style="background:${ti.bg};color:${ti.c};border:1px solid ${ti.c}30">${ti.ico} ${q.t}</span><span class="dt ${DC[q.d]||'medium'}">${DM[q.d]||'TB'}</span>${fq}${wcBadge}</div></div><div class="qt">${esc(q.q)}</div><div class="og">${oh}</div><div class="qf" id="qf-${q.id}"><span class="fi" id="fi-${q.id}"></span><div id="ft-${q.id}"></div></div>`;
   return d;
 }
 
@@ -419,6 +478,8 @@ function pick(qid,idx){
   });
   const nb=document.getElementById(`qn-${qid}`);if(nb)nb.className='qn '+(ok?'ok':'no');
   const item=document.getElementById(`item-${qid}`);if(item)item.classList.add('done');
+  // Ghi lại câu sai vào localStorage
+  if(!ok){const wc=loadWC();const k=qk(q);wc[k]=(wc[k]||0)+1;saveWC(wc);updateHaySaiUI();}
   const fb=document.getElementById(`qf-${qid}`),fi=document.getElementById(`fi-${qid}`),ft=document.getElementById(`ft-${qid}`);
   if(fb&&fi&&ft){fb.className='qf show '+(ok?'fb-ok':'fb-no');fi.textContent=ok?'✅':'❌';ft.innerHTML=ok?'<strong>Chính xác!</strong>':`<strong>Chưa đúng.</strong> Đáp án: <strong>${esc(q.a)}</strong>`;}
   upProg(isHard?'hard':'normal');
@@ -460,7 +521,11 @@ function submitQuiz(mode){
   const [,t,s]=M.find(([th])=>pct>=th);
   const retryClass=isHard?'rb-retry-hard':'rb-retry';
   const retryFn=isHard?'buildHard()':'buildNormal()';
-  res.innerHTML=`<div class="rb show"><div class="rb-top"><div class="rb-score ${scoreClass}">${score}</div><div class="rb-info"><div class="rb-title">${t}</div><div class="rb-sub">${ok}/${total} câu đúng — ${s}</div></div></div><div class="rb-stats"><div class="rb-stat"><div class="rb-dot" style="background:var(--gr)"></div>${ok} đúng</div><div class="rb-stat"><div class="rb-dot" style="background:var(--re)"></div>${no} sai</div><div class="rb-stat"><div class="rb-dot" style="background:var(--tx3)"></div>${skip} bỏ qua</div></div><div class="rb-acts"><button class="rb-btn ${retryClass}" onclick="${retryFn}">🔄 Làm lại</button><button class="rb-btn rb-clear" onclick="clearMode('${mode}')">🗑️ Xóa đáp án</button></div></div>`;
+  // Lưu câu sai để "Làm lại câu sai"
+  const wrongQs=quiz.filter(q=>{const a=ansMap[q.id];return a&&!a.ok;});
+  if(!isHard)ST.lastWrong=wrongQs;
+  const retryWrongBtn=(!isHard&&wrongQs.length>0)?`<button class="rb-btn rb-retry-wrong" onclick="buildRetryWrong()">🔁 Làm lại ${wrongQs.length} câu sai</button>`:'';
+  res.innerHTML=`<div class="rb show"><div class="rb-top"><div class="rb-score ${scoreClass}">${score}</div><div class="rb-info"><div class="rb-title">${t}</div><div class="rb-sub">${ok}/${total} câu đúng — ${s}</div></div></div><div class="rb-stats"><div class="rb-stat"><div class="rb-dot" style="background:var(--gr)"></div>${ok} đúng</div><div class="rb-stat"><div class="rb-dot" style="background:var(--re)"></div>${no} sai</div><div class="rb-stat"><div class="rb-dot" style="background:var(--tx3)"></div>${skip} bỏ qua</div></div><div class="rb-acts"><button class="rb-btn ${retryClass}" onclick="${retryFn}">🔄 Làm lại</button>${retryWrongBtn}<button class="rb-btn rb-clear" onclick="clearMode('${mode}')">🗑️ Xóa đáp án</button></div></div>`;
   document.getElementById('fs').classList.remove('show');
   res.scrollIntoView({behavior:'smooth',block:'start'});
 }
