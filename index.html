@@ -379,7 +379,7 @@ function switchTab(mode){
 function rnd(a){const r=[...a];for(let i=r.length-1;i>0;i--){const j=0|Math.random()*(i+1);[r[i],r[j]]=[r[j],r[i]];}return r;}
 function mkOpts(q,shuffle){
   let o=[q.a,...(q.w||[]).slice(0,3)];
-  o=[...new Set(o.filter(x=>x&&x.length>1))];
+  o=[...new Set(o.filter(x=>x&&x.length>0))];
   while(o.length<2)o.push('Không xác định');
   return shuffle?rnd(o):o;
 }
