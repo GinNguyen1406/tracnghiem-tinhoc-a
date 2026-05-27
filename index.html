@@ -33,6 +33,10 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);font-s
 .ph p{font-size:13px;color:var(--tx2)}
 .ph-stats{display:inline-flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:10px;background:var(--white);border:1px solid var(--bd);border-radius:100px;padding:6px 18px;font-size:12px;color:var(--tx2)}
 .ph-stats strong{color:var(--ac);font-weight:700}
+.th-banner{margin-top:14px;padding:12px 20px;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);border:1.5px solid #e94560;border-radius:14px;text-align:center;animation:th-pulse 2.5s ease-in-out infinite}
+.th-title{font-size:clamp(15px,4vw,19px);font-weight:800;color:#f5a623;letter-spacing:.3px;text-shadow:0 0 12px rgba(245,166,35,.5)}
+.th-sub{font-size:12px;color:#a8b2d8;margin-top:4px;font-style:italic}
+@keyframes th-pulse{0%,100%{box-shadow:0 0 8px rgba(233,69,96,.3)}50%{box-shadow:0 0 18px rgba(233,69,96,.6)}}
 
 /* ── MODE TABS ── */
 .mode-tabs{display:flex;gap:8px;margin-bottom:16px;border-bottom:2px solid var(--bd);padding-bottom:0}
@@ -104,6 +108,9 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);font-s
 .rb-info{flex:1}
 .rb-title{font-size:16px;font-weight:700;margin-bottom:3px}
 .rb-sub{font-size:13px;color:var(--tx2)}
+.th-result{padding:13px 18px;border-radius:12px;font-size:15px;font-weight:700;text-align:center;margin-bottom:14px;letter-spacing:.2px}
+.th-pass{background:linear-gradient(135deg,#0d3b1e,#1a5c30);border:1.5px solid #2ecc71;color:#2ecc71;text-shadow:0 0 10px rgba(46,204,113,.4);animation:th-pulse 2s ease-in-out infinite}
+.th-fail{background:linear-gradient(135deg,#3b0d0d,#5c1a1a);border:1.5px solid #e74c3c;color:#ff6b6b;text-shadow:0 0 10px rgba(231,76,60,.4)}
 .rb-stats{display:flex;gap:14px;margin-top:10px;flex-wrap:wrap}
 .rb-stat{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:600}
 .rb-dot{width:8px;height:8px;border-radius:50%}
@@ -192,6 +199,10 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--tx);font-s
 <div class="ph">
   <h1>📚 Trắc Nghiệm Tin Học A</h1>
   <p>Tổng hợp từ 11 đề thi &amp; ngân hàng câu hỏi thực tế</p>
+  <div class="th-banner">
+    <div class="th-title">🍀 Good luck to Trung Hoàng !!!</div>
+    <div class="th-sub">Bình tĩnh, không runnnnn, tin vào bản thân 💪</div>
+  </div>
   <div class="ph-stats">
     <span>🟢 <strong>413</strong> câu ôn tập</span>
     <span>·</span>
@@ -525,7 +536,8 @@ function submitQuiz(mode){
   const wrongQs=quiz.filter(q=>{const a=ansMap[q.id];return a&&!a.ok;});
   if(!isHard)ST.lastWrong=wrongQs;
   const retryWrongBtn=(!isHard&&wrongQs.length>0)?`<button class="rb-btn rb-retry-wrong" onclick="buildRetryWrong()">🔁 Làm lại ${wrongQs.length} câu sai</button>`:'';
-  res.innerHTML=`<div class="rb show"><div class="rb-top"><div class="rb-score ${scoreClass}">${score}</div><div class="rb-info"><div class="rb-title">${t}</div><div class="rb-sub">${ok}/${total} câu đúng — ${s}</div></div></div><div class="rb-stats"><div class="rb-stat"><div class="rb-dot" style="background:var(--gr)"></div>${ok} đúng</div><div class="rb-stat"><div class="rb-dot" style="background:var(--re)"></div>${no} sai</div><div class="rb-stat"><div class="rb-dot" style="background:var(--tx3)"></div>${skip} bỏ qua</div></div><div class="rb-acts"><button class="rb-btn ${retryClass}" onclick="${retryFn}">🔄 Làm lại</button>${retryWrongBtn}<button class="rb-btn rb-clear" onclick="clearMode('${mode}')">🗑️ Xóa đáp án</button></div></div>`;
+  const thMsg=!isHard?(pct>=0.5?`<div class="th-result th-pass">🎉 Chúc mừng TH đã vượt qua kỳ thi Trắc nghiệm! 🏆</div>`:`<div class="th-result th-fail">💪 Làm lại he, Bình tĩnh và kĩ hơn!</div>`):'';
+  res.innerHTML=`<div class="rb show">${thMsg}<div class="rb-top"><div class="rb-score ${scoreClass}">${score}</div><div class="rb-info"><div class="rb-title">${t}</div><div class="rb-sub">${ok}/${total} câu đúng — ${s}</div></div></div><div class="rb-stats"><div class="rb-stat"><div class="rb-dot" style="background:var(--gr)"></div>${ok} đúng</div><div class="rb-stat"><div class="rb-dot" style="background:var(--re)"></div>${no} sai</div><div class="rb-stat"><div class="rb-dot" style="background:var(--tx3)"></div>${skip} bỏ qua</div></div><div class="rb-acts"><button class="rb-btn ${retryClass}" onclick="${retryFn}">🔄 Làm lại</button>${retryWrongBtn}<button class="rb-btn rb-clear" onclick="clearMode('${mode}')">🗑️ Xóa đáp án</button></div></div>`;
   document.getElementById('fs').classList.remove('show');
   res.scrollIntoView({behavior:'smooth',block:'start'});
 }
